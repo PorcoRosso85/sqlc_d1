@@ -136,9 +136,16 @@ export const machine = createMachine(
                 },
               },
               '/invite': {
-                initial: 'New state 2',
+                initial: '/',
                 states: {
-                  'New state 2': {},
+                  '/': {
+                    on: {
+                      'button_get__/:userId/:accountId/invite/history': {
+                        target: '/history',
+                      },
+                    },
+                  },
+                  '/history': {},
                 },
               },
               '/info': {
@@ -246,6 +253,9 @@ export const machine = createMachine(
               url: {
                 target: '/:orderId',
               },
+              'button_get__/order/info/:feature': {
+                target: '/:feature',
+              },
             },
           },
           '/request': {
@@ -275,17 +285,11 @@ export const machine = createMachine(
                 },
               },
               '/verification': {
-                initial: '認証するためのクエリ',
-                states: {
-                  認証するためのクエリ: {
-                    on: {
-                      next: {
-                        target: 'オーダー状況をwaitからpendingにするクエリ',
-                      },
-                    },
-                  },
-                  オーダー状況をwaitからpendingにするクエリ: {
-                    description:
+                invoke: {
+                  src: 'query',
+                  input: {
+                    認証するためのクエリ: '',
+                    オーダー現状をwaitからpendingに変更するクエリ:
                       'INSERT INTO transactions (account_id, amount, ...) VALUES (?, ?, ...);',
                   },
                 },
@@ -298,8 +302,14 @@ export const machine = createMachine(
               },
             },
           },
-          オーダー状況を取得するクエリ: {},
-          開始時間から一定時間経過をしたオーダーを取得するクエリ: {},
+          '/:feature': {
+            description: '/:transaction\n\n/:invite',
+            initial: 'オーダー状況を取得するクエリ',
+            states: {
+              オーダー状況を取得するクエリ: {},
+              開始時間から一定時間経過をしたオーダーを取得するクエリ: {},
+            },
+          },
           server: {
             initial: 'オーダー状況をpendingからdoneに変更するクエリ',
             states: {
@@ -320,66 +330,52 @@ export const machine = createMachine(
     },
     types: {
       events: {} as
-        | { type: 'click' }
-        | { type: 'load' }
-        | { type: 'authed' }
-        | { type: 'button_post__/account/register' }
-        | { type: 'button_post__/account/transaction' }
-        | { type: 'button_post__/account/invite' }
-        | { type: 'button_get__/account/info' }
-        | { type: 'Event 2' }
-        | { type: 'url' }
-        | { type: 'next' }
-        | { type: 'Event 1' }
-        | { type: 'button_get__/user/register' }
-        | { type: 'button_get__/permission' }
         | { type: 'div' }
-        | { type: 'button_get__/role/register' }
-        | { type: 'get__/role/edit' }
-        | { type: 'delete__/role/delete' }
+        | { type: 'url' }
+        | { type: 'load' }
+        | { type: 'next' }
         | { type: 'with' }
-        | { type: 'button_get__/role' }
+        | { type: 'click' }
+        | { type: 'authed' }
+        | { type: 'Event 1' }
+        | { type: 'Event 2' }
         | { type: 'Event 5' }
+        | { type: 'get__/role/edit' }
         | { type: 'button_get__/item' }
+        | { type: 'button_get__/role' }
+        | { type: 'delete__/role/delete' }
+        | { type: 'button_get__/permission' }
+        | { type: 'button_get__/account/info' }
+        | { type: 'button_get__/role/register' }
+        | { type: 'button_get__/user/register' }
+        | { type: 'button_post__/account/invite' }
         | { type: 'button_post__/order/:orderId' }
-        | { type: 'button_get__/:user/:accountId/transaction/history' },
+        | { type: 'button_post__/account/register' }
+        | { type: 'button_get__/order/info/:feature' }
+        | { type: 'button_post__/account/transaction' }
+        | { type: 'button_get__/:userId/:accountId/invite/history' }
+        | { type: 'button_get__/:user/:accountId/transaction/history' }
+        | { type: 'button_post__/order/:orderId/cancel' },
     },
   },
   {
-    actions: {
-      failure: ({ context, event }) => {},
-      success: ({ context, event }) => {},
+    actions: {},
+    actors: {
+      認証するためのクエリ: createMachine({
+        /* ... */
+      }),
+      'オーダー現状をwait＞pendingに変更するクエリ': createMachine({
+        /* ... */
+      }),
+      query: createMachine({
+        /* ... */
+      }),
     },
-    actors: {},
     guards: {
-      false: ({ context, event }, params) => {
-        return false
-      },
-      AuthTokenError: ({ context, event }, params) => {
-        return false
-      },
-      'inline:app./user./info.middleware.auth.authTokenAtGoogleAuth#success[-1]#guard': (
-        { context, event },
-        params,
-      ) => {
-        return false
-      },
-      'inline:app.view./user./info.middleware.auth.checkAuthedTokenInToGoogle.connecting#connect[-1]#guard':
-        ({ context, event }, params) => {
-          return false
-        },
-      'inline:app.view./user./info.middleware.auth.checkAuthedTokenInToGoogle.gettingResult#success[-1]#guard':
-        ({ context, event }, params) => {
-          return false
-        },
-      'inline:app.view./user./info.middleware.auth.redirectAndGetAuthedTokenFromGoogle.connecting#connect[-1]#guard':
-        ({ context, event }, params) => {
-          return false
-        },
-      logout: ({ context, event }, params) => {
-        return false
-      },
       login: ({ context, event }, params) => {
+        return false
+      },
+      logout: ({ context, event }, params) => {
         return false
       },
     },
